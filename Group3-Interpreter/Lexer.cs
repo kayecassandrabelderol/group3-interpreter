@@ -162,6 +162,7 @@ namespace Group3_Interpreter
             {
                 pos++;
             }
+
             try
             {
                 if (valueStart == pos)
@@ -175,6 +176,20 @@ namespace Group3_Interpreter
                 Environment.Exit(1);
             }
 
+            try
+            {
+                if (code[pos] == ';')
+                {
+                    throw new Exception("Semi colon detected on variable assignment");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Environment.Exit(1);
+            }
+            
+           
             int value = int.Parse(code.Substring(valueStart, pos - valueStart));
             return new Token(TokenType.DataType, value.ToString());
         }
