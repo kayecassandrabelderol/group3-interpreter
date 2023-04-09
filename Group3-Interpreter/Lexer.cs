@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data;
+using System.IO;
 
 namespace Group3_Interpreter
 {
@@ -31,31 +32,21 @@ namespace Group3_Interpreter
         //this one is for recording each token
         public IEnumerable<Token> Tokenize()
         {
-            int pos = 0;
-
-            //iterate to scan for tokens
-            while (pos < code.Length)
+            using (StringReader reader = new StringReader(code))
             {
-                if (code[pos] == '#' && pos + 1 < code.Length)
+                string line = code;
+                while ((line = reader.ReadLine()) != null)
                 {
-                    yield return ParseSingleLineComment(ref pos);
-                }
-                else if (code[pos] == '/' && pos + 1 < code.Length && code[pos + 1] == '*')
-                {
-                    yield return ParseMultiLineComment(ref pos);
-                }
-                else if (char.IsLetter(code[pos]))
-                {
-                    yield return ParseReserveWord(ref pos);
-                }
-                else if (char.IsWhiteSpace(code[pos]))
-                {
-                    pos++;
-                }
-                else
-                {
-                    Console.WriteLine("Unexpected Token");
-                    Environment.Exit(1);
+                    line = line.Trim();
+                    if (string.IsNullOrEmpty(line))
+                    {
+                        continue;
+                    }
+                    else
+                    {
+
+                        yield return ParseReserveWord(line);
+                    }
                 }
             }
         }
@@ -71,20 +62,6 @@ namespace Group3_Interpreter
             }
 
             return new Token(TokenType.Comment, code.Substring(start, pos - 1 - start));
-        }
-        private Token ParseMultiLineComment(ref int pos)
-        {
-            int start = pos;
-            pos += 2;
-
-            while (pos + 1 < code.Length && !(code[pos] == '*' && code[pos + 1] == '/'))
-            {
-                pos++;
-            }
-
-            pos += 2;
-
-            return new Token(TokenType.Comment, code.Substring(start, pos - start));
         }
 
         private Boolean Parse_Int_Value(string value)
@@ -421,60 +398,24 @@ namespace Group3_Interpreter
         }
         
 
-        private Token ParseReserveWord(ref int pos)
+        private Token ParseReserveWord(string line)
         {
 
-            int start = pos;
+       
            
             try 
             {
-                string keyword = "";
-
-                while (pos < code.Length && !char.IsWhiteSpace(code[pos]))
-                {
-                    pos++;
-                }
-
-                keyword = code.Substring(start, pos - start);
-              
-                if (!keyWords.ContainsKey(keyword))
-                {
-
-                    throw new Exception("Invalid keyword");
-                }
-                else 
-                {
-                    if (keyword == "INT" || keyword == "FLOAT" || keyword == "FLOAT" || keyword == "FLOAT")
-                    {
-                        return ParseDataType(ref pos, keyword);
-                    }
-                    else if (keyword == "DISPLAY:")
-                    {
-                        //get the message
-                        string message = "";
-                        while (pos < code.Length && code[pos] != '\n')
-                        {
-                            message += code[pos];
-                            pos++;
-                        } 
-                        
-                        message =  message.Substring(0, message.Length);
-                      
-                        return ParseDisplay(message);
-
-                    }
-                    else 
-                    {
-                        Environment.Exit(1);
-                        return ParseDataType(ref pos, keyword);
-                        throw new Exception("Invalid keyword" + keyword);
-                    }
-                }
+                //INT a Variable declaration
+                //INT a,b,c Multiple Variable declaration
+                //INT A = 10 Variable assignment
+                //INT A,B,C = 10 Multiple variable assignment
+                // A=B=C=3
 
 
-               
 
 
+
+                return new Token(TokenType.DataType, "Program Stop");
             }
             catch (Exception ex)
             {
