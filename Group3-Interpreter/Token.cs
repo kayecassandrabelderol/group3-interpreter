@@ -28,7 +28,8 @@ namespace Group3_Interpreter
         Operator,
         Constant,
         DataType,
-        Comment
+        Comment,
+        Print
     }
 
 }

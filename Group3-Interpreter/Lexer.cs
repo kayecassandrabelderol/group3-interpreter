@@ -1,19 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Data;
 
 namespace Group3_Interpreter
 {
     class Lexer
     {
+        DataTable dt = new DataTable();
         private readonly string code;
         private readonly Dictionary<string, TokenType> keyWords = new Dictionary<string, TokenType>() {
-        { "int", TokenType.DataType },
-        { "double", TokenType.DataType },
-        { "string", TokenType.DataType }
+        { "INT", TokenType.DataType },
+        { "CHAR", TokenType.DataType },
+        { "BOOL", TokenType.DataType },
+        { "FLOAT", TokenType.DataType },
+         { "DISPLAY:", TokenType.Print }
          };
+
+        Dictionary<string, string> variables = new Dictionary<string, string>();
 
         public Lexer(string code)
         {
@@ -28,7 +36,7 @@ namespace Group3_Interpreter
             //iterate to scan for tokens
             while (pos < code.Length)
             {
-                if (code[pos] == '/' && code[pos + 1] == '/' && pos + 1 < code.Length)
+                if (code[pos] == '#' && pos + 1 < code.Length)
                 {
                     yield return ParseSingleLineComment(ref pos);
                 }
@@ -38,11 +46,16 @@ namespace Group3_Interpreter
                 }
                 else if (char.IsLetter(code[pos]))
                 {
-                    yield return ParseDataType(ref pos);
+                    yield return ParseReserveWord(ref pos);
                 }
                 else if (char.IsWhiteSpace(code[pos]))
                 {
                     pos++;
+                }
+                else
+                {
+                    Console.WriteLine("Unexpected Token");
+                    Environment.Exit(1);
                 }
             }
         }
@@ -74,68 +87,229 @@ namespace Group3_Interpreter
             return new Token(TokenType.Comment, code.Substring(start, pos - start));
         }
 
-        private Token ParseDataType(ref int pos)
+        private Boolean Parse_Int_Value(string value)
         {
 
-            int start = pos;
 
-            while (pos < code.Length && char.IsLetter(code[pos]))
-            {
-                pos++;
-            }
+            string pattern = @"^[+-]?\d+(\s*[+\-*/]\s*[+-]?\d+)*\s*$";
+            bool isMatch = Regex.IsMatch(value, pattern);
+           
+            return isMatch;
 
-            string keyword = code.Substring(start, pos - start);
-            try
+        }
+        private Boolean Parse_Float_Value(string value)
+        {
+            string pattern = @"^\s*[+-]?\d+(\.\d+)?\s*([+\-*/]\s*[+-]?\d+(\.\d+)?\s*)*$";
+            bool isMatch = Regex.IsMatch(value, pattern);
+
+            return isMatch;
+
+        }
+
+        private Boolean Parse_Char_Value(string value)
+        {
+            int position = 0;
+            Boolean result = false;
+
+            //must start with single qoute
+            if (value[position] == '\'')
             {
-                if (!keyWords.ContainsKey(keyword))
+                position++;
+                if (char.IsLetter(value[position]))
                 {
 
-                    throw new Exception("Invalid keyword");
+                    position++;
+                    if (value[position] == '\'')
+                    {
+                        result |= true;
+                    }
+                    else 
+                    {
+                        result = false;
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(keyword + ":" + ex.Message);
-                Environment.Exit(1);
-
-            }
-
-            //next of data type is space
-            if (char.IsWhiteSpace(code[pos]))
-            {
-                pos++;
-            }
-
-            //parse the variable name
-            string variableName = "";
-
-            while (pos < code.Length && char.IsLetterOrDigit(code[pos]))
-            {
-                variableName += code[pos];
-                pos++;
-            }
-            try
-            {
-                if (variableName == "")
+                else 
                 {
-                    throw new Exception("Invalid variable name");
+                    result= false;
                 }
+
             }
-            catch (Exception ex)
+            else 
+            {
+                result = false;
+            }
+                    
+            return result;
+
+        }
+        //fix the boolean value
+        private Boolean Parse_Bool_Value(string value)
+        {
+
+
+
+            string pattern = @"^\""(TRUE|FALSE)\""$";
+            bool isMatch = Regex.IsMatch(value, pattern);
+
+            return isMatch;
+
+
+        }
+
+        private Token ParseDisplay(string message) 
+        {
+            
+            string display = "";
+         
+
+            try 
+            {
+                //check the message if the & grammar is correct
+                //the & must not start at the start and end
+                if (message.StartsWith("&") || message.EndsWith("&")) 
+                {
+                    throw new Exception("It must not be start or end with &");
+                }
+
+               
+                string pattern_Consecutive_Ampersands = @"&\s*&";
+                bool isMatch_Consecutive_Ampersands = Regex.IsMatch(message, pattern_Consecutive_Ampersands);
+
+                if (isMatch_Consecutive_Ampersands)
+                {
+                    throw new Exception("The string contains two consecutive ampersands");
+                }
+                //split 
+                string[] inputs = message.Split('&');
+
+
+                //check for arithmetic
+                string arithmeticPattern = @"(\b[a-zA-Z]\w*\b|\d+)(\s*[\+\-\*\/\%]\s*(\b[a-zA-Z]\w*\b|\d+))+";
+                //check for double qoutation ^\s*"[^"]*"\s*$
+                string stringPattern = @"^\s*""[^""]*""\s*$";
+              
+                string bracketPattern = @"^\[[^\s\]]+\]$";
+               
+
+               
+                foreach (string input in inputs)
+                {
+                   // Console.WriteLine(input[1]+"h");
+                    bool isMatch_arithmeticPattern = Regex.IsMatch(input, arithmeticPattern);
+                    bool isMatch_stringPattern = Regex.IsMatch(input, stringPattern);
+                    bool isMatch_bracketPattern = Regex.IsMatch(input, bracketPattern);
+
+                  
+                    if (isMatch_arithmeticPattern || isMatch_bracketPattern || isMatch_stringPattern)
+                    {
+                        //to do remove space
+                        if (isMatch_arithmeticPattern) 
+                        {
+                            string value = "";
+                            value = dt.Compute(input,null).ToString();
+                            display += value;
+                        }
+
+                        if (isMatch_stringPattern)
+                        {
+                           
+                           
+                            int startIndex = input.IndexOf("\"") + 1;
+                            int endIndex = input.IndexOf("\"", startIndex);
+                            string value = input.Substring(startIndex, endIndex - startIndex);
+
+                            display += value;
+                        }
+
+                        if (isMatch_bracketPattern)
+                        {
+
+                            int startIndex = input.IndexOf("\"") + 1;
+                            int endIndex = input.IndexOf("\"", startIndex);
+                            string value = input.Substring(startIndex, endIndex - startIndex);
+
+                            display += value;
+                        }
+                 
+                     
+
+
+                   }
+                    else 
+                    {
+                       
+                        throw new Exception("Invalid Input");
+                    }  
+
+                }
+
+
+
+                //Escape code
+                //must start and ends with []
+                //^\s *\[[^""\[\]]*\]\s *$
+                //^\s*\[[^""\[\]]*\]\s*$
+                //^\[[^\s\]]+\]$  must not contain any space inside 
+            }
+            catch (Exception ex) 
             {
                 Console.WriteLine(ex.Message);
                 Environment.Exit(1);
+               return new Token(TokenType.DataType, "Program Stop");
             }
-            //next of variable name is space
-            if (char.IsWhiteSpace(code[pos]))
-            {
-                pos++;
-            }
-            // Parse the equals sign
-            //in this language no variable declaration ONLY variable assignment
-            //that is why we look for assignment operator for every data type variable
+            
+
+
+
+            //if no & just get all the keywords w
+            //if their are spaces
+            //split the display by &
+            //check the expression if expression only expression error if it encountered anything else same as the rest
+            //(\b[a-zA-Z]\w*\b|\d+)(\s*[\+\-\*\/\%]\s*(\b[a-zA-Z]\w*\b|\d+))+ for arithmetic
+            //^\"[^\"]*\"$ for enclosed double qoutation
+            //check the variables and replaceW
+            //else "Unexpected input"
+            //evaluate each then concatenate each
+            return new Token(TokenType.Print, display);
+        }
+
+
+        private Token ParseDataType(ref int pos, string data_type) 
+        {
+            int start = pos;
+            string variableName = "";
+           
+
             try
             {
+                //skipe white space
+                if (char.IsWhiteSpace(code[pos]))
+                {
+                    pos++;
+                }
+
+                //parse the variable name
+
+
+                while (pos < code.Length && char.IsLetterOrDigit(code[pos]))
+                {
+                    variableName += code[pos];
+                    pos++;
+                }
+
+                //check if it is empty or it is a keyword
+                if (variableName == "" || keyWords.ContainsKey(variableName))
+                {
+                    throw new Exception("Invalid variable name");
+                }
+
+                //skip space
+                if (char.IsWhiteSpace(code[pos]))
+                {
+                    pos++;
+                }
+
+                //find the assignment operator
                 if (pos < code.Length && code[pos] == '=')
                 {
                     pos++; // move past the equals sign
@@ -144,54 +318,172 @@ namespace Group3_Interpreter
                 {
                     throw new Exception("Invalid variable declaration");
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                Environment.Exit(1);
-            }
-            //after equal is space
-            if (char.IsWhiteSpace(code[pos]))
-            {
-                pos++;
-            }
-            // Parse the variable value
-            int valueStart = pos;
+                //after equal is space
+                if (char.IsWhiteSpace(code[pos]))
+                {
+                    pos++;
+                }
 
-            while (pos < code.Length && char.IsDigit(code[pos]))
-            {
-                pos++;
-            }
+                //Check what type of data type
 
-            try
-            {
+
+                // Parse the variable value
+                int valueStart = pos;
+
+                while (pos < code.Length && code[pos] != '\n')
+                {
+                    pos++;
+                }
+                
                 if (valueStart == pos)
                 {
-                    throw new Exception("Invalid variable value");
+                    
+                    throw new Exception("No variable value found");
                 }
+
+                string value = (code.Substring(valueStart, pos - valueStart)).Replace(" ", "");
+
+              
+                if (data_type.Equals("INT"))
+                {
+                    
+                    //check if the value is acceptable
+                    if (Parse_Int_Value(value)) 
+                    {
+                        //it will cause an exception if other than digit and operator is found
+                        //if char it will look in database if none Evaluate exception
+
+                        value = dt.Compute(value, null).ToString(); 
+                        variables.Add(variableName, value);
+                    }
+                    else 
+                    {
+                        
+                        throw new Exception("Invalid variable value");
+                    }
+                    
+                }
+                else if (data_type.Equals("CHAR"))
+                {
+
+                    if (Parse_Char_Value(value))
+                    {
+                        variables.Add(variableName, value);
+                    }
+                    else
+                    {
+                        throw new Exception("Invalid variable value");
+                    }
+                }
+                else if (data_type.Equals("BOOL"))
+                {
+                    if (Parse_Bool_Value(value))
+                    {
+                        variables.Add(variableName, value);
+                    }
+                    else
+                    {
+                        throw new Exception("Invalid variable value");
+                    }
+
+                }
+                else if (data_type.Equals("FLOAT"))
+                {
+                    //check if the value is acceptable
+                    if (Parse_Float_Value(value))
+                    {
+                        value = dt.Compute(value, null).ToString();
+                        variables.Add(variableName, value);
+                        
+                    }
+                    else
+                    {
+                        throw new Exception("Invalid variable value");
+                    }
+                }
+                else 
+                {
+                    throw new Exception("Invalid DataType");
+                }
+
+               
+                return new Token(TokenType.DataType, value.ToString());
+
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 Environment.Exit(1);
+                return new Token(TokenType.DataType, "Program Stop");
+
             }
 
-            try
+        }
+        
+
+        private Token ParseReserveWord(ref int pos)
+        {
+
+            int start = pos;
+           
+            try 
             {
-                if (code[pos] == ';')
+                string keyword = "";
+
+                while (pos < code.Length && !char.IsWhiteSpace(code[pos]))
                 {
-                    throw new Exception("Semi colon detected on variable assignment");
+                    pos++;
                 }
+
+                keyword = code.Substring(start, pos - start);
+              
+                if (!keyWords.ContainsKey(keyword))
+                {
+
+                    throw new Exception("Invalid keyword");
+                }
+                else 
+                {
+                    if (keyword == "INT" || keyword == "FLOAT" || keyword == "FLOAT" || keyword == "FLOAT")
+                    {
+                        return ParseDataType(ref pos, keyword);
+                    }
+                    else if (keyword == "DISPLAY:")
+                    {
+                        //get the message
+                        string message = "";
+                        while (pos < code.Length && code[pos] != '\n')
+                        {
+                            message += code[pos];
+                            pos++;
+                        } 
+                        
+                        message =  message.Substring(0, message.Length);
+                      
+                        return ParseDisplay(message);
+
+                    }
+                    else 
+                    {
+                        Environment.Exit(1);
+                        return ParseDataType(ref pos, keyword);
+                        throw new Exception("Invalid keyword" + keyword);
+                    }
+                }
+
+
+               
+
+
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 Environment.Exit(1);
-            }
-            
-           
-            int value = int.Parse(code.Substring(valueStart, pos - valueStart));
-            return new Token(TokenType.DataType, value.ToString());
+                return new Token(TokenType.DataType, "Program Stop");
+
+            } 
+
         }
 
 
