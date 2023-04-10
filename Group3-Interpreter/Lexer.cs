@@ -38,7 +38,7 @@ namespace Group3_Interpreter
                 while ((line = reader.ReadLine()) != null)
                 {
                     line = line.Trim();
-                    if (string.IsNullOrEmpty(line))
+                    if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
                     {
                         continue;
                     }
