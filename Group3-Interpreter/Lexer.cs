@@ -166,6 +166,7 @@ namespace Group3_Interpreter
                 string stringPattern = @"^\s*""[^""]*""\s*$";
               
                 string bracketPattern = @"^\[[^\s\]]+\]$";
+                string dollarSignPattern = @"^\s*\$\s*$";
                
 
                
@@ -175,6 +176,7 @@ namespace Group3_Interpreter
                     bool isMatch_arithmeticPattern = Regex.IsMatch(input, arithmeticPattern);
                     bool isMatch_stringPattern = Regex.IsMatch(input, stringPattern);
                     bool isMatch_bracketPattern = Regex.IsMatch(input, bracketPattern);
+                    bool isMatch_dollarSign = Regex.IsMatch(input, dollarSignPattern);
 
                   
                     if (isMatch_arithmeticPattern || isMatch_bracketPattern || isMatch_stringPattern)
@@ -206,6 +208,10 @@ namespace Group3_Interpreter
                             string value = input.Substring(startIndex, endIndex - startIndex);
 
                             display += value;
+                        }
+                        if (input.Trim().StartsWith("$"))
+                        {
+                            display += "\n";
                         }
                  
                      
