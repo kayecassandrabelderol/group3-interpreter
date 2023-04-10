@@ -137,7 +137,7 @@ namespace Group3_Interpreter
         {
             
             string display = "";
-         
+            string inputError = "";
 
             try 
             {
@@ -178,6 +178,7 @@ namespace Group3_Interpreter
                     bool isMatch_bracketPattern = Regex.IsMatch(input, bracketPattern);
                     bool isMatch_dollarSign = Regex.IsMatch(input, dollarSignPattern);
 
+                    inputError = input;
                   
                     if (isMatch_arithmeticPattern || isMatch_bracketPattern || isMatch_stringPattern)
                     {
@@ -236,7 +237,7 @@ namespace Group3_Interpreter
             }
             catch (Exception ex) 
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.Message + inputError);
                 Environment.Exit(1);
                return new Token(TokenType.DataType, "Program Stop");
             }
