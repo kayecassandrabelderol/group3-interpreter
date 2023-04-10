@@ -25,12 +25,10 @@ namespace Group3_Interpreter
             //thoughts? get all if statement/ while loop to be subjected to its own lexer
 
             // Input code string to be parsed
-              Console.WriteLine("\n\nSource Code:");
+          Console.WriteLine("\n\nSource Code:");
               string code = @"BEGIN CODE
-             #single line 
-    INT xen =   10 + 1    
-    FLOAT x = 3    
-    DISPLAY: \""HELLO\""
+         
+    DISPLAY: ""HELLO""
 END CODE
 ";
 
@@ -39,6 +37,7 @@ END CODE
             if (code.Trim().StartsWith("BEGIN CODE") && code.Trim().EndsWith("END CODE"))
             {
                 Console.WriteLine(code);
+                code = code.Replace("BEGIN CODE", "").Replace("END CODE", "");
                 Console.WriteLine("Output\n\n");
                 // Create a new lexical analyzer
                 Lexer lexer = new Lexer(code);
@@ -53,7 +52,7 @@ END CODE
             {
                 Console.WriteLine("CODE must start with BEGIN CODE and end with END CODE");
             }
-                       
+                    
 
 
                      
