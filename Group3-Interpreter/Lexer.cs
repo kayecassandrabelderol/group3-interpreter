@@ -180,7 +180,7 @@ namespace Group3_Interpreter
 
                     inputError = input;
                   
-                    if (isMatch_arithmeticPattern || isMatch_bracketPattern || isMatch_stringPattern)
+                    if (isMatch_arithmeticPattern || isMatch_bracketPattern || isMatch_stringPattern || isMatch_dollarSign)
                     {
                         //to do remove space
                         if (isMatch_arithmeticPattern) 
@@ -214,6 +214,7 @@ namespace Group3_Interpreter
                         {
                             display += "\n";
                         }
+                   }
                  
                      
 
