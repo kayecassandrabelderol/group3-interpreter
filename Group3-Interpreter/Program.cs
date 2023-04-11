@@ -23,16 +23,17 @@ namespace Group3_Interpreter
             Application.SetCompatibleTextRenderingDefault(false);
             // Application.Run(new Form1());
             //thoughts? get all if statement/ while loop to be subjected to its own lexer
-
+    
             // Input code string to be parsed
-          Console.WriteLine("\n\nSource Code:");
+            Console.WriteLine("\n\nSource Code:");
               string code = @"BEGIN CODE
-         
-    DISPLAY: ""HELLO""
+        
+       INT aa=3,a=2
+        INT b = aa+a
+      DISPLAY: ""HELLO"" & 2+3 & b > a
+
 END CODE
 ";
-
-
 
             if (code.Trim().StartsWith("BEGIN CODE") && code.Trim().EndsWith("END CODE"))
             {
