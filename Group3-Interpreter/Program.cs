@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -23,17 +24,16 @@ namespace Group3_Interpreter
             Application.SetCompatibleTextRenderingDefault(false);
             // Application.Run(new Form1());
             //thoughts? get all if statement/ while loop to be subjected to its own lexer
-    
+            Trace.Listeners.Clear(); // Clear existing listeners
+            Trace.Listeners.Add(new TextWriterTraceListener(Console.Out)); // Add a listener for console output
             // Input code string to be parsed
             Console.WriteLine("\n\nSource Code:");
-              string code = @"BEGIN CODE
-        
-       INT aa=3,a=2
-        INT b = aa+a
-      DISPLAY: ""HELLO"" & 2+3 & b > a
-
-END CODE
-";
+              string code = @"
+                BEGIN CODE
+	                INT x = -5
+                    DISPLAY: x
+                END CODE
+                ";
 
             if (code.Trim().StartsWith("BEGIN CODE") && code.Trim().EndsWith("END CODE"))
             {
@@ -46,17 +46,21 @@ END CODE
                 // Parse the code and print out the tokens
                 foreach (Token token in lexer.Tokenize())
                 {
-                    Console.WriteLine(token);
+                    TokenType tokenType = token.Type;
+                    if (token.getType() == "Print") 
+                    {
+                        Console.WriteLine(token.getValue());
+                    }
                 }
             }
             else 
             {
                 Console.WriteLine("CODE must start with BEGIN CODE and end with END CODE");
             }
-                    
 
 
-                     
+
+            Trace.Close();
             /*
 
             string pattern = @"(?:^|\s)([a-zA-Z0-9]+(?:,[a-zA-Z0-9]+)*|[a-zA-Z0-9]+)\s*&\s*([a-zA-Z0-9]+(?:,[a-zA-Z0-9]+)*|[a-zA-Z0-9]+)(?=\s|$)";
