@@ -51,7 +51,12 @@ namespace Group3_Interpreter
                     }
                     else
                     {
-                       
+                        int poundIndex = line.IndexOf("#");
+                        //false if their are space in between the bracket
+                        if (poundIndex != -1 && line[poundIndex-1] != '[' && line[poundIndex + 1] != ']') 
+                        {
+                            line = line.Substring(0, poundIndex);
+                        }
                         yield return ParseReserveWord(line);
                     }
                 }
