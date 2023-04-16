@@ -21,6 +21,14 @@ namespace Group3_Interpreter
         {
             return $"[{Type}, {Value}]";
         }
+        public string getValue() 
+        {
+            return $"{Value}"+"";
+        }
+        public string getType()
+        {
+            return $"{Type}"+"";
+        }
     }
     enum TokenType
     {
