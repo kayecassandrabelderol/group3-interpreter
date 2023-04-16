@@ -28,20 +28,68 @@ namespace Group3_Interpreter
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out)); // Add a listener for console output
             // Input code string to be parsed
             Console.WriteLine("\n\nSource Code:");
-              string code = @"
+          
+            string code = @"  
+              
+                #Hello
                 BEGIN CODE
-	                INT x = -5
-                    DISPLAY: x
+                #World	                
+                    INT x,o,p=3 #hello
+                    x=3+2
+                    INT t= 1,u=2
+                    t=u=5
+                    DISPLAY: x & t & u + p
                 END CODE
+                 #Hello
                 ";
-
-            if (code.Trim().StartsWith("BEGIN CODE") && code.Trim().EndsWith("END CODE"))
+            Console.WriteLine(code);
+            string[] lines = code.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            string codeTrim = "";
+            bool insideCodeBlock = false;
+            // Iterate through each line
+            //remove all comments
+            for (int i=0; i<lines.Length; i++)
             {
-                Console.WriteLine(code);
-                code = code.Replace("BEGIN CODE", "").Replace("END CODE", "");
+             
+
+               
+                if (lines[i].Trim().StartsWith("BEGIN CODE"))
+                {
+                    codeTrim += lines[i] + "\n";
+                    insideCodeBlock = true;
+                }
+                else if (lines[i].Trim().StartsWith("END CODE"))
+                {
+                    codeTrim += lines[i] + "\n";
+                    insideCodeBlock = false;
+                }
+                else if ((lines[i].Trim().StartsWith("#") || lines[i].Trim() == "") && !insideCodeBlock)
+                {
+                    lines[i] = "";
+
+                }
+                else if (!lines[i].Trim().StartsWith("#") && !insideCodeBlock)
+                {
+
+                    Console.WriteLine("Other than comment outside the code block exists");
+                    Environment.Exit(1);
+                }
+                else if (insideCodeBlock)
+                {
+                    codeTrim += lines[i] + "\n";
+                }
+            }
+
+
+
+
+            if (codeTrim.Trim().StartsWith("BEGIN CODE") && codeTrim.Trim().EndsWith("END CODE"))
+            {
+               
+                codeTrim = codeTrim.Replace("BEGIN CODE", "").Replace("END CODE", "");
                 Console.WriteLine("Output\n\n");
                 // Create a new lexical analyzer
-                Lexer lexer = new Lexer(code);
+                Lexer lexer = new Lexer(codeTrim);
 
                 // Parse the code and print out the tokens
                 foreach (Token token in lexer.Tokenize())
@@ -75,6 +123,7 @@ namespace Group3_Interpreter
             }
 
             */
+          
 
         }
     }
