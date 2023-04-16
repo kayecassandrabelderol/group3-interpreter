@@ -71,25 +71,8 @@ namespace Group3_Interpreter
             }
 
 
-
-
-            foreach (string key in Globalvariables.Keys)
-            {
-
-                string pattern123 = $@"\b{key}\b";
-                string[] varInfo = Globalvariables[key];
-                string replacement = varInfo[1];
-
-                if (varInfo[0] == "INT" || varInfo[0] == "FLOAT" || varInfo[0] == "BOOL")
-                {
-
-                    value = Regex.Replace(value, pattern123, replacement);
-                    value = value.Replace("\"", "");
-
-                }
-            }
-
             //check if value contains a variable
+            //will not match if it contains space that is why always trim
             string pattern1 = @"\b^[a-zA-Z]|[a-zA-Z_]\w*$\b"; // matches any number (whole or decimal)
             bool containsLetterAsOperand = Regex.IsMatch(value, pattern1);
             MatchCollection matchesVariableName = Regex.Matches(value, pattern1);
@@ -103,10 +86,32 @@ namespace Group3_Interpreter
 
                 if (containsLetterAsOperand)
                 {
-                    Console.WriteLine("The expression contains a letter or a word as an operand.");
-                    Environment.Exit(1);
-                }
+                    
+                    if (!Globalvariables.ContainsKey(match.Value.Trim()))
+                    {
+                        Console.WriteLine("The expression contains a letter or a word as an operand.");
+                        Environment.Exit(1);
+                    }
+                    else
+                    {
+                        string pattern123 = $@"\b{match.Value.Trim()}\b";
+                        string[] varInfo = Globalvariables[match.Value.Trim()];
+                        string replacement = varInfo[1];
+                        if (replacement == null)
+                        {
+                            Console.WriteLine("The variable name to be replace is null");
+                            Environment.Exit(1);
+                        }
+                        if (varInfo[0] == "INT" || varInfo[0] == "FLOAT" || varInfo[0] == "BOOL")
+                        {
 
+                            value = Regex.Replace(value, pattern123, replacement);
+                            value = value.Replace("\"", "");
+
+                        }
+                    }
+                }
+             
             }
 
             if (dt.Compute(value, null).ToString() == "True" || dt.Compute(value, null).ToString() == "False") 
@@ -123,7 +128,7 @@ namespace Group3_Interpreter
                 value = Regex.Replace(value, patternFalse, "\"FALSE\"");
                 return value;
             }
-           
+        
             return dt.Compute(value,null).ToString();
 
         }
@@ -272,23 +277,24 @@ namespace Group3_Interpreter
                     bool isMatch_stringPattern = Regex.IsMatch(input, stringPattern);
                     bool isMatch_bracketPattern = Regex.IsMatch(input, bracketPattern);
                     bool isMatch_dollarSign = Regex.IsMatch(input, dollarSignPattern);
-
+                    
                     inputError = input;
-                  
+                   
                     if (isMatch_arithmeticPattern || isMatch_bracketPattern || isMatch_stringPattern || isMatch_dollarSign || Parse_Bool_Value(input))
                     {
                         //to do remove space
                         if (isMatch_arithmeticPattern) 
                         {
                             string value = "";
-                            value = Parse_Expression(input);
+                            value = Parse_Expression(input.Trim());
+
                             display += value;
                         }
 
                         if (Parse_Bool_Value(input)) 
                         {
                             string value = "";
-                            value = Parse_Expression(input);
+                            value = Parse_Expression(input.Trim());
                             display += value;
                         }
 
@@ -424,67 +430,25 @@ namespace Group3_Interpreter
                     //check variable name if it is valid or not or it is a keyword
                     string multipleVariablePattern = @"^[^,][^,]*(,[^,]+[^,]*)*$";
                     bool isMatch_multipleVariable = Regex.IsMatch(line, multipleVariablePattern);
-                    if (isMatch_multipleVariable && line.Contains(','))
+                    if (isMatch_multipleVariable && line.Contains(',')) //check if it is multiple variable
                     {
                         
                         string[] variables = line.Split(',');
 
-
-                        //---------Get last variable and value then add to dictionary-----------------------------
-                        string[] last_variable_info = variables[variables.Length - 1].Split('=');
-                        string lastVariableName = last_variable_info[0];
-
-                        bool isMatch_lastVariableName = Regex.IsMatch(lastVariableName, variableNamePattern);
-                        string lastVariableValue = last_variable_info[1];
-
-
-                      
-
-
                         //check if value is valid
-                        bool valid_value = false;
-                        valid_value = ParseValue(datatype, lastVariableValue);
-
-                      
-                        if (datatype == "INT" || datatype == "FLOAT" || datatype == "BOOL")
-                        {
-                          
-                            lastVariableValue = Parse_Expression(lastVariableValue);
-                           
-                            valid_value = ParseValue(datatype, lastVariableValue);//to recheck after evaluation if it is still whole number
-                          
-                        }
-
-                       
-                        //----------------------------------------------- INT x,y,z=10
-                        //add data to dictionary
-                        if (isMatch_lastVariableName && valid_value)
-                        {
-                            value= lastVariableValue;
-                            Globalvariables.Add(lastVariableName.Trim(), new string[] { datatype, lastVariableValue });
-                        }
-                        else 
-                        {
-                            throw new Exception("Invalid Value");
-                        }
-                        //-----------------------------------------------------------------------------------------   
-
+                        bool valid_value = false; 
 
                         //check the variable
-                        for (int i = 0; i < variables.Length - 1; i++)
+                        for (int i = 0; i < variables.Length; i++)
                         {
-                            bool isMatch_variableName = Regex.IsMatch(variables[i].Trim(), variableNamePattern);
-                            if (isMatch_variableName)
-                            {
+                           // bool isMatch_variableName = Regex.IsMatch(variables[i].Trim(), variableNamePattern);
+                           // if (isMatch_variableName)
+                          //  {
                                 if (!keyWords.ContainsKey(variables[i]))
                                 {
-                                    if (variables[0].Contains("="))
+                                    if (variables[i].Contains("="))
                                     {
-                                        if (!variables[i].Contains("=")) 
-                                        {
-                                            throw new Exception("Variable assignment does not have =");
-                                        }
-
+                                        
                                         string[] variable_info = variables[i].Split('=');
                                         string Variable_Name = variable_info[0];
                                         string Variable_Value = variable_info[1];
@@ -492,7 +456,7 @@ namespace Group3_Interpreter
                                         if (datatype == "INT" || datatype == "FLOAT" || datatype == "BOOL")
                                         {
 
-                                            Variable_Value = Parse_Expression(Variable_Value);
+                                            Variable_Value = Parse_Expression(Variable_Value.Trim());
 
                                             valid_value = ParseValue(datatype, Variable_Value);//to recheck after evaluation if it is still whole number
                                            
@@ -503,9 +467,9 @@ namespace Group3_Interpreter
                                     
                                     }
                                     else //last variable assignment INT x,y=3
-                                    {
-                                        value = lastVariableValue;
-                                        Globalvariables.Add(variables[i].Trim(), new string[] { datatype, lastVariableValue });
+                                    {       //the x will be null
+                                        
+                                        Globalvariables.Add(variables[i].Trim(), new string[] { datatype, null });
                                     }
                                   
 
@@ -515,46 +479,51 @@ namespace Group3_Interpreter
                                 {
                                     throw new Exception("Variable name is a keyword");
                                 }
+                         
+
+                        }
+                    }  
+                    else //single variable assignment/declaration
+                    {
+                        //to do if variable declaration only??
+                        //check if their is a = sign
+
+                        if (line.Contains('='))
+                        {
+                            string[] last_variable_info = line.Split('=');
+                            string VariableName = last_variable_info[0].Trim();
+                            bool isMatch_VariableName = Regex.IsMatch(VariableName, variableNamePattern);
+                            string VariableValue = last_variable_info[1];
+
+                            bool valid_value = false;
+
+                            valid_value = ParseValue(datatype, VariableValue);
+
+                            if (datatype == "INT" || datatype == "FLOAT" || datatype == "BOOL")
+                            {
+                                VariableValue = Parse_Expression(VariableValue);
+                                valid_value = ParseValue(datatype, VariableValue);//to recheck after evaluation 
+
+                            }
+
+                            if (isMatch_VariableName && valid_value)
+                            {
+                                value = VariableValue;
+                                Globalvariables.Add(VariableName.Trim(), new string[] { datatype, VariableValue });
+
                             }
                             else
                             {
-                              
-                                throw new Exception("Invalid Variable name");
+                                throw new Exception("Invalid Value");
                             }
-
                         }
-                    }  //----------------------------------------------- INT x,y,z=10
-                    else //single variable assignment/declaration
-                    {   
-                        //to do if variable declaration only??
-
-
-                        string[] last_variable_info = line.Split('=');
-                        string VariableName = last_variable_info[0].Trim();
-                        bool isMatch_VariableName = Regex.IsMatch(VariableName, variableNamePattern);
-                        string VariableValue = last_variable_info[1];
-
-                        bool valid_value = false;
+                        else //INT a
+                        {
+                            Globalvariables.Add(line.Trim(), new string[] { datatype, null });
+                        }
                        
-                        valid_value = ParseValue(datatype, VariableValue);
                       
-                        if (datatype == "INT" || datatype == "FLOAT" || datatype == "BOOL")
-                        {
-                            VariableValue = Parse_Expression(VariableValue);
-                            valid_value = ParseValue(datatype, VariableValue);//to recheck after evaluation 
-                          
-                        }
-
-                        if (isMatch_VariableName && valid_value)
-                        {
-                            value = VariableValue;
-                            Globalvariables.Add(VariableName.Trim(), new string[] { datatype, VariableValue });
-                            
-                        }
-                        else
-                        {
-                            throw new Exception("Invalid Value");
-                        }
+                       
 
 
 
@@ -566,12 +535,14 @@ namespace Group3_Interpreter
                    
                     string startingWord = "DISPLAY:";
                     string message = line.Substring(startingWord.Length).Trim();
-                    //Console.WriteLine(message);
+                   // Console.WriteLine(message);
                     return ParseDisplay(message);
                 }
                 else if (isMatch_multipleAssignmentPattern) //variable assignment ex: x=y=1
                 {
                     string[] variableList = line.Split('=');
+
+                    //get the last value
                     string varValue = variableList[variableList.Length - 1];
                     //check if all variables have same data type
                     string firstVariable = variableList[0];
@@ -580,22 +551,25 @@ namespace Group3_Interpreter
                     for (int i = 0; i < variableList.Length - 1; i++) 
                     {
                         string[] varInfo = Globalvariables[variableList[i]];
-                        if (firstVarInfo[0] == varInfo[i])
+                        //instead of parse int to check if the data
+                        //we should check the data type 
+                        if (firstVarInfo[0] == varInfo[0])
                         {
                             if (Parse_Int_Value(varValue))
                             {
+                               
                                 varValue = Parse_Expression(varValue);
-                                validValue = ParseValue(varInfo[i], varValue);
+                                validValue = ParseValue(varInfo[0], varValue);
                             }
                             else if (Parse_Float_Value(varValue))
                             {
                                 varValue = Parse_Expression(varValue);
-                                validValue = ParseValue(varInfo[i], varValue);
+                                validValue = ParseValue(varInfo[0], varValue);
                             }
                             else if (Parse_Bool_Value(varValue))
                             {
                                 varValue = Parse_Expression(varValue);
-                                validValue = ParseValue(varInfo[i], varValue);
+                                validValue = ParseValue(varInfo[0], varValue);
                             }
                             else if (Parse_Char_Value(varValue))
                             {
