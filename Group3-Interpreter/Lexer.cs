@@ -17,6 +17,7 @@ namespace Group3_Interpreter
     class Lexer
     {
         DataTable dt = new DataTable();
+        
         private readonly string code;
         private readonly Dictionary<string, TokenType> keyWords = new Dictionary<string, TokenType>() {
         { "INT", TokenType.DataType },
@@ -179,7 +180,7 @@ namespace Group3_Interpreter
         private Boolean Parse_Bool_Value(string value)
         {
             string pattern = @"^""(TRUE|FALSE)""$";
-            string patternBoolean = @"(\b[a-zA-Z]\w*\b|\d+)(\s*[<>]=?|!=|[=]=?|\sAND\s|\sOR\s|\sNOT\s)(\s*(\b[a-zA-Z]\w*\b|\d+))+";
+            string patternBoolean = @"(\b[a-zA-Z]\w*\b|\d+)\s*([<>]=?|!=|[=]=?|<>|\sAND\s|\sOR\s|\sNOT\s)\s*(\b[a-zA-Z]\w*\b|\d+)";
 
             //get rid of "" in true or false
           
@@ -370,6 +371,8 @@ namespace Group3_Interpreter
             string value = "";
             try 
             {
+                string multipleAssignmentPattern = @"^(?!.*={2,})(?!^=)(?!.*=$)\s*[a-zA-Z_]\w*\s*(?:=\s*\b[a-zA-Z_]\w*\b\s*)*=\s*\S+$";
+                bool isMatch_multipleAssignmentPattern = Regex.IsMatch(line, multipleAssignmentPattern);
                 string variableNamePattern = @"^[a-zA-Z]|[a-zA-Z_]\w*$";
                 //INT a Variable declaration
                 // ^(?:INT|FLOAT)\s+([a-zA-Z_]\w*)(?:,\s*([a-zA-Z_]\w*))*$ 
@@ -378,7 +381,7 @@ namespace Group3_Interpreter
 
                 //INT A,B,C = 10 Multiple variable assignment
                 // A=B=C=3
-
+                
                 //check the assinment/declaration
                 string variablePattern = @"^(?:INT|FLOAT|BOOL|CHAR)\s+([a-zA-Z_]\w*)(?:,\s*([a-zA-Z_]\w*))*\s*(?:=\s*[^=]+)*$";
                 bool isMatch_variablePattern = Regex.IsMatch(line, variablePattern);
@@ -558,10 +561,63 @@ namespace Group3_Interpreter
                    
                     string startingWord = "DISPLAY:";
                     string message = line.Substring(startingWord.Length).Trim();
+                    //Console.WriteLine(message);
                     return ParseDisplay(message);
                 }
-                else if (false) //variable assignment ex: x=y=1
+                else if (isMatch_multipleAssignmentPattern) //variable assignment ex: x=y=1
                 {
+                    string[] variableList = line.Split('=');
+                    string varValue = variableList[variableList.Length - 1];
+                    //check if all variables have same data type
+                    string firstVariable = variableList[0];
+                    string[] firstVarInfo = Globalvariables[firstVariable];
+                    bool validValue = false;
+                    for (int i = 0; i < variableList.Length - 1; i++) 
+                    {
+                        string[] varInfo = Globalvariables[variableList[i]];
+                        if (firstVarInfo[0] == varInfo[i])
+                        {
+                            if (Parse_Int_Value(varValue))
+                            {
+                                varValue = Parse_Expression(varValue);
+                                validValue = ParseValue(varInfo[i], varValue);
+                            }
+                            else if (Parse_Float_Value(varValue))
+                            {
+                                varValue = Parse_Expression(varValue);
+                                validValue = ParseValue(varInfo[i], varValue);
+                            }
+                            else if (Parse_Bool_Value(varValue))
+                            {
+                                varValue = Parse_Expression(varValue);
+                                validValue = ParseValue(varInfo[i], varValue);
+                            }
+                            else if (Parse_Char_Value(varValue))
+                            {
+                            }
+                            else 
+                            {
+                                Console.WriteLine("Invalid variable");
+                                Environment.Exit(1);
+                            }
+
+                            if (!validValue) 
+                            {
+                                Console.WriteLine("Invalid value");
+                                Environment.Exit(1);
+                            }
+                        }
+                        else 
+                        {
+                            Console.WriteLine("The variables dont have the same datatype");
+                            Environment.Exit(1);
+                        }
+                        Globalvariables[variableList[i]] = new string[] { varInfo[0], varValue };
+                    }
+
+
+
+
                 }
                 else 
                 {
