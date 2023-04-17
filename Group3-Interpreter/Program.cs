@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Net.WebRequestMethods;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 
 namespace Group3_Interpreter
@@ -30,17 +31,15 @@ namespace Group3_Interpreter
             Console.WriteLine("\n\nSource Code:");
           
             string code = @"  
-              
-                #Hello
-                BEGIN CODE
-                #World	                
-                    INT x,o,p=3 #hello
-                    x=3+2
-                    INT t= 1,u=2
-                    t=u=5
-                    DISPLAY: x & t & u + p
-                END CODE
-                 #Hello
+                         BEGIN CODE
+            INT a=100, b=200, c=300
+            BOOL d=”FALSE”
+            d = (a < b AND c <>200)
+            DISPLAY: d
+            END CODE
+
+
+               
                 ";
             Console.WriteLine(code);
             string[] lines = code.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
@@ -105,7 +104,7 @@ namespace Group3_Interpreter
             {
                 Console.WriteLine("CODE must start with BEGIN CODE and end with END CODE");
             }
-
+            
 
 
             Trace.Close();

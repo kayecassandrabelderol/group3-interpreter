@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Net;
 using System.Linq.Expressions;
 using System.Collections;
+using static System.Net.WebRequestMethods;
 
 namespace Group3_Interpreter
 {
@@ -64,21 +65,25 @@ namespace Group3_Interpreter
         }
         private string Parse_Expression(string value)
         {
+           
             if (Parse_Bool_Value(value))
             {
-                value = value.Replace("\"", "");
+               
+                value = value.Replace("”", "");
 
             }
-
+           
 
             //check if value contains a variable
             //will not match if it contains space that is why always trim
-            string pattern1 = @"\b^[a-zA-Z]|[a-zA-Z_]\w*$\b"; // matches any number (whole or decimal)
-            bool containsLetterAsOperand = Regex.IsMatch(value, pattern1);
-            MatchCollection matchesVariableName = Regex.Matches(value, pattern1);
+            string pattern1 = @"\b[a-zA-Z_]\w*\b"; // matches any number (whole or decimal)
+            bool containsLetterAsOperand = Regex.IsMatch(value.Trim(), pattern1);
+            MatchCollection matchesVariableName = Regex.Matches(value.Trim(), pattern1);
+           
             foreach (Match match in matchesVariableName)
             {
-                if (match.Value.Equals("TRUE") || match.Value.Equals("FALSE"))
+               
+                if (match.Value.Equals("TRUE") || match.Value.Equals("FALSE") || match.Value.Equals("AND") || match.Value.Equals("OR") || match.Value.Equals("NOT"))
                 {
 
                     continue;
@@ -89,6 +94,7 @@ namespace Group3_Interpreter
                     
                     if (!Globalvariables.ContainsKey(match.Value.Trim()))
                     {
+                       
                         Console.WriteLine("The expression contains a letter or a word as an operand.");
                         Environment.Exit(1);
                     }
@@ -106,14 +112,14 @@ namespace Group3_Interpreter
                         {
 
                             value = Regex.Replace(value, pattern123, replacement);
-                            value = value.Replace("\"", "");
+                            value = value.Replace("”", "");
 
                         }
                     }
                 }
              
             }
-
+           
             if (dt.Compute(value, null).ToString() == "True" || dt.Compute(value, null).ToString() == "False") 
             {
                value =  dt.Compute(value, null).ToString();
@@ -122,13 +128,13 @@ namespace Group3_Interpreter
                 string patternFALSE = $@"\bFALSE\b";
                 string patternTrue = $@"\bTrue\b";
                 string patternFalse = $@"\bFalse\b";
-                value = Regex.Replace(value, patternTRUE, "\"TRUE\"");
-                value = Regex.Replace(value, patternFALSE, "\"FALSE\"");
-                value = Regex.Replace(value, patternTrue, "\"TRUE\"");
-                value = Regex.Replace(value, patternFalse, "\"FALSE\"");
+                value = Regex.Replace(value, patternTRUE, "TRUE");
+                value = Regex.Replace(value, patternFALSE, "FALSE");
+                value = Regex.Replace(value, patternTrue, "TRUE");
+                value = Regex.Replace(value, patternFalse, "FALSE");
                 return value;
             }
-        
+            
             return dt.Compute(value,null).ToString();
 
         }
@@ -189,22 +195,25 @@ namespace Group3_Interpreter
         //fix the boolean value
         private Boolean Parse_Bool_Value(string value)
         {
-            string pattern = @"^""(TRUE|FALSE)""$";
+            
+            string pattern = @"”TRUE”|”FALSE”|TRUE|FALSE";
             string patternBoolean = @"(\b[a-zA-Z]\w*\b|\d+)\s*([<>]=?|!=|[=]=?|<>|\sAND\s|\sOR\s|\sNOT\s)\s*(\b[a-zA-Z]\w*\b|\d+)";
 
             //get rid of "" in true or false
           
             bool isMatch = Regex.IsMatch(value.Trim(), pattern);
           
+            //if boolean
             if (!isMatch) 
             {
                
-                    string patternTRUE = $@"\b""TRUE""\b";
-                    string patternFALSE = $@"\b""FALSE""\b";
+                    string patternTRUE = $@"\b”TRUE”\b";
+                    string patternFALSE = $@"\b”FALSE”\b";
                     value = Regex.Replace(value, patternTRUE, "TRUE");
                     value = Regex.Replace(value, patternFALSE, "FALSE");
                     isMatch = Regex.IsMatch(value.Trim(), patternBoolean);
-            
+               
+
             }
 
            
@@ -379,10 +388,11 @@ namespace Group3_Interpreter
 
         private Token ParseReserveWord(string line)
         {
+           
             string value = "";
             try 
             {
-                string multipleAssignmentPattern = @"^(?!.*={2,})(?!^=)(?!.*=$)\s*[a-zA-Z_]\w*\s*(?:=\s*\b[a-zA-Z_]\w*\b\s*)*=\s*\S+$";
+                string multipleAssignmentPattern = @"^(?!.*\s*={2,}\s*)(?!^=)(?!.*=$)(?:.+?=.*?)+$";
                 bool isMatch_multipleAssignmentPattern = Regex.IsMatch(line, multipleAssignmentPattern);
                 string variableNamePattern = @"^[a-zA-Z]|[a-zA-Z_]\w*$";
                 //INT a Variable declaration
@@ -399,6 +409,7 @@ namespace Group3_Interpreter
                 //for variable declaration and assignment
                 if (isMatch_variablePattern)
                 {
+                  
                     string datatype = "";
                     //remove datatype
                     if (line.StartsWith("INT"))
@@ -444,7 +455,7 @@ namespace Group3_Interpreter
                            // bool isMatch_variableName = Regex.IsMatch(variables[i].Trim(), variableNamePattern);
                            // if (isMatch_variableName)
                           //  {
-                                if (!keyWords.ContainsKey(variables[i]))
+                                if (!keyWords.ContainsKey(variables[i].Trim()))
                                 {
                                     if (variables[i].Contains("="))
                                     {
@@ -487,7 +498,7 @@ namespace Group3_Interpreter
                     {
                         //to do if variable declaration only??
                         //check if their is a = sign
-
+                        
                         if (line.Contains('='))
                         {
                             string[] last_variable_info = line.Split('=');
@@ -503,7 +514,7 @@ namespace Group3_Interpreter
                             {
                                 VariableValue = Parse_Expression(VariableValue);
                                 valid_value = ParseValue(datatype, VariableValue);//to recheck after evaluation 
-
+                                
                             }
 
                             if (isMatch_VariableName && valid_value)
@@ -540,17 +551,18 @@ namespace Group3_Interpreter
                 }
                 else if (isMatch_multipleAssignmentPattern) //variable assignment ex: x=y=1
                 {
+                   ;
                     string[] variableList = line.Split('=');
 
                     //get the last value
-                    string varValue = variableList[variableList.Length - 1];
+                    string varValue = variableList[variableList.Length - 1].Trim();
                     //check if all variables have same data type
                     string firstVariable = variableList[0];
-                    string[] firstVarInfo = Globalvariables[firstVariable];
+                    string[] firstVarInfo = Globalvariables[firstVariable.Trim()];
                     bool validValue = false;
                     for (int i = 0; i < variableList.Length - 1; i++) 
                     {
-                        string[] varInfo = Globalvariables[variableList[i]];
+                        string[] varInfo = Globalvariables[variableList[i].Trim()];
                         //instead of parse int to check if the data
                         //we should check the data type 
                         if (firstVarInfo[0] == varInfo[0])
@@ -591,7 +603,7 @@ namespace Group3_Interpreter
                             Console.WriteLine("The variables dont have the same datatype");
                             Environment.Exit(1);
                         }
-                        Globalvariables[variableList[i]] = new string[] { varInfo[0], varValue };
+                        Globalvariables[variableList[i].Trim()] = new string[] { varInfo[0], varValue };
                     }
 
 
@@ -600,6 +612,7 @@ namespace Group3_Interpreter
                 }
                 else 
                 {
+                    Console.WriteLine(line + "=123");
                     throw new Exception("Invalid keyword");
                 }
                       
